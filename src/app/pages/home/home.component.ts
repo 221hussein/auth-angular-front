@@ -19,10 +19,9 @@ export class HomeComponent implements OnInit{
     this.authService.user().subscribe( {
       next:(res : any) => {
         this.message = `Hi ${res.firstName} ${res.lastName}`
-        console.log(res);
       },
       error :err => {
-        console.log(err)
+        this.message = `You are not authenticated`
     }
     });
   }

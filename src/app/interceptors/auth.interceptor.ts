@@ -3,9 +3,9 @@ import {
   HttpRequest,
   HttpHandler,
   HttpEvent,
-  HttpInterceptor
+  HttpInterceptor, HttpErrorResponse
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {catchError, Observable, switchMap, throwError} from 'rxjs';
 import {AuthService} from "../services/auth.service";
 
 @Injectable()
@@ -20,6 +20,22 @@ export class AuthInterceptor implements HttpInterceptor {
       }
     });
 
-    return next.handle(req);
+    return next.handle(req).pipe(catchError((err :HttpErrorResponse) => {
+      if (err.status === 400) {
+        return this.authService.refresh().pipe(
+            switchMap((res :any) => {
+             this.authService.accessToken = res.token;
+
+             return next.handle( request.clone({
+               setHeaders: {
+                 Authorization: `Bearer ${this.authService.accessToken}`
+               }
+             }));
+            })
+        );
+      }
+
+      return throwError(() => err);
+    }));
   }
 }
